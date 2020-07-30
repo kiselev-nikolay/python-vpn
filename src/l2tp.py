@@ -39,6 +39,8 @@ class L2TPFrame(Frame):
     avps = {}
 
     def parse_data(self, data):
+        print(data)
+        print(l2tp_header_formatter.unpack(data[:12]))
         # unpack header
         (self.message_type, 
         _,
@@ -52,6 +54,7 @@ class L2TPFrame(Frame):
         self.control_sequence_id, 
         self.expected_control_sequence_id) = l2tp_header_formatter.unpack(data[:12])
         self._data = data[12:]
+        print(self._data)
        
         if (self.message_type == True) and (len(self._data) != 0):
             # if this is a control message and it contains an AVP
@@ -113,9 +116,9 @@ class L2TPServer:
         self.port = port
         self.hostname = socket.gethostname()
         # send sequence counter
-        _ns_counter = 0
+        self._ns_counter = 0
         # expected next recieved counter
-        _nr_counter = 1
+        self._nr_counter = 1
         
         # handlers for the various control message types
         self.control_message_handlers = {'SCCRQ':   self.handle_sccrq, 
@@ -126,6 +129,7 @@ class L2TPServer:
                                          'ICRQ':    self.handle_icrq, 
                                          'ICCN':    self.handle_iccn, 
                                          'CDN':     self.handle_cdn
+                                         'HELLO':     self.handle_hello
                                          }
 
         
@@ -158,12 +162,10 @@ class L2TPServer:
                 # if it has AVPS
                 self._nr_counter += 1
                 control_message_type = frame.avps['control_message'][1]
-                self.control_message_handlers[control_message_type](frame)
-            
+                self.control_message_handlers[control_message_type](frame)            
         else:
             pass
-          
-        
+
     def handle_sccrq(self, frame):
         # handle the sccrq message
         # format the various AVPS
